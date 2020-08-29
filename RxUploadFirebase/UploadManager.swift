@@ -33,6 +33,7 @@ public struct RxUpload: ObservableType {
                 print("error in save image")
                 observer.onError(error)
             }
+            print("upload success")
             observer.onNext(ImageKey(key: metaData.name ?? imageName))
             observer.onCompleted()
         }

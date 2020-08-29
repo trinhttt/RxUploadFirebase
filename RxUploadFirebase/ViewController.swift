@@ -27,6 +27,55 @@ class ViewController: UIViewController {
             image.isUserInteractionEnabled = true
             image.addGestureRecognizer(tapGestureRecognizer)
         }
+       example2()
+    }
+    
+    func example1(of: String = "deferred") {
+        var flip = false
+        let factory: Observable<[Int]> = Observable.deferred { // 3
+            flip.toggle()
+            if flip {
+                return Observable.of([1, 2, 3])
+            } else {
+                return Observable.of([4, 5, 6])
+            }
+        }
+        
+        for _ in 0...3 {
+            factory.subscribe(onNext: {
+                print($0, terminator: "\n")
+            })
+                .disposed(by: disposeBag)
+            print()
+        }
+    }
+    
+    func example2(name: String = ".just") {
+        let observable = Observable.just("this is element").do(onNext: { (element) in
+            print("onNext")//2
+        }, afterNext: { (_) in
+            print("afterNext")//4
+        }, onError: { (_) in
+            print("onError")
+        }, afterError: { (_) in
+            print("afterError")
+        }, onCompleted: {
+            print("onCompleted")//5
+        }, afterCompleted: {
+            print("afterCompleted")//6
+        }, onSubscribe: {
+            print("onSubscribe")//1
+        }, onSubscribed: {
+            print("onSubscribed")//7
+        }) {
+            print("trddddddd")//8
+        }
+        observable.subscribe { event in
+            print("event: \(event)")
+            //3event: next(this is element)
+            //6 event: completed
+        }
+        .disposed(by: disposeBag)
     }
 
     @objc func openGalleryClick(tapGesture: UITapGestureRecognizer) {
@@ -47,23 +96,6 @@ class ViewController: UIViewController {
     }
     
     func uploadMedia(images: [UIImage], completion: @escaping ((_ url: URL?) -> ())) {
-//        for image in images {
-//            let imageName = NSUUID().uuidString
-//            let storageRef = Storage.storage().reference().child("images").child(imageName)
-//            let imgData = image.pngData()
-//            let metaData = StorageMetadata()
-//            metaData.contentType = "image/png"
-//            storageRef.putData(imgData!, metadata: metaData) { (metadata, error) in
-//                if error == nil{
-//                    storageRef.downloadURL(completion: { (url, error) in
-//                        completion(url)
-//                    })
-//                } else {
-//                    print("error in save image")
-//                    completion(nil)
-//                }
-//            }
-//        }
         let imageDataList = images.compactMap { ImageData(image: $0) }
         RxUpload.upload(dataList: imageDataList)
             .subscribeOn(ConcurrentDispatchQueueScheduler.init(qos: .background))
@@ -79,8 +111,8 @@ class ViewController: UIViewController {
 extension ViewController: UINavigationControllerDelegate, UIImagePickerControllerDelegate{
 
     func setupImagePicker(){
-        if UIImagePickerController.isSourceTypeAvailable(.savedPhotosAlbum) {
-            imagePicker.sourceType = .savedPhotosAlbum
+        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
+//            imagePicker.sourceType = .photoLibrary
             imagePicker.delegate = self
             imagePicker.allowsEditing = true
 
